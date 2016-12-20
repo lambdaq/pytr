@@ -5,7 +5,6 @@
 # from gevent import monkey
 # monkey.patch_all()
 
-import re
 import socket
 import os, sys
 import random, struct
@@ -14,7 +13,7 @@ from collections import deque, Counter, defaultdict
 
 logger = logging.getLogger(__file__)
 logger.addHandler(logging.StreamHandler(sys.stderr))
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 
 
 class UdpIpParser(object):
@@ -182,6 +181,14 @@ class Tracer(object):
         if ttl <= self.max_ttl[ip]:
             self.result[ip][ttl] = '?'
 
+    @property
+    def on_tick(self):
+        return getattr(self, '_on_tick', None) or (lambda *args: None)
+
+    @on_tick.setter
+    def on_tick(self, func):
+        self._on_tick = func
+
     def tick(self):
         logger.debug('in_flight=%s, retries=%s', len(self.in_flight), self.retries.most_common(4))
 
@@ -201,6 +208,7 @@ class Tracer(object):
             self.ping(ip, ttl)
             self.retries[(ip, ttl)] = self.max_retry
             sent += 1
+        self.on_tick()
 
     def ping(self, ip, ttl):
         logger.debug("Ping %s, ttl=%s", ip, ttl)
@@ -259,13 +267,6 @@ class Tracer(object):
         else:
             logger.debug('Pong unknown %s -> %s type %s' % (
                 inner_ip.src_ip, inner_ip.dst_ip, icmp.type))
-
-
-def extract_ipv4(lines):
-    for l in lines:
-        m = re.search(r'(\d+\.\d+\.\d+\.\d+)', l)
-        if m:
-            yield m.group(1)
 
 
 def get_hops(res):
