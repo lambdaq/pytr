@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 
+import socket
 import sys, curses
 import re, time, datetime
 
@@ -23,8 +24,8 @@ def extract_ipv4(lines):
 
 def main(stdscr, inputs):
     # to avoid getch() clear whole screen call stdscr.refresh()
-
-    ips = list(extract_ipv4(inputs.split('\n')))
+    ips = [socket.gethostbyname(inputs.split('\n')[0])]
+    # ips = list(extract_ipv4())
     stdscr.addstr(0, 0, 'DEST:%s' % '     '.join(ips))
     stdscr.refresh()
 
@@ -38,7 +39,8 @@ def main(stdscr, inputs):
 
     def on_pong(tracer, ping_ip, pong_ip, ttl):
         loc = ''.join(geoip.find(pong_ip).encode('utf8').split('\t')[1:]).replace(' ', '')
-        stdscr.addstr(1 + ttl, 0, ' %2d  %s\t%s' % (ttl, pong_ip, loc))
+        stdscr.addstr(1 + ttl, 0, ' %2d  %s' % (ttl, pong_ip))
+        stdscr.addstr(1 + ttl, 21, loc)
         stdscr.refresh()
     t.on_pong = on_pong
 
