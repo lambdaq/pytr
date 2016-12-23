@@ -113,8 +113,6 @@ MAX_RETRY = 5
 class Tracer(object):
     MAX_TTL = 32
 
-    _on_tick = lambda *args: None
-
     def __init__(self):
         """
         packet send rate = self.batch_size/self.timeout
@@ -142,7 +140,7 @@ class Tracer(object):
         Need consider retries.
         """
         for ip in hosts:
-            for ttl in xrange(5, self.MAX_TTL + 1):
+            for ttl in xrange(1, self.MAX_TTL + 1):
                 if ttl >= self.max_ttl[ip]:
                     break
                 resp = (ip.strip(), ttl)
@@ -183,12 +181,25 @@ class Tracer(object):
         if ttl <= self.max_ttl[ip]:
             self.result[ip][ttl] = '?'
 
+    @property
+    def on_tick(self):
+        return getattr(self, '_on_tick', None) or (lambda *args: None)
+
+    @on_tick.setter
     def on_tick(self, func):
         self._on_tick = func
 
+    @property
+    def on_pong(self):
+        return getattr(self, '_on_pong', None) or (lambda *args: None)
+
+    @on_pong.setter
+    def on_pong(self, func):
+        self._on_pong = func
+
     def tick(self):
         logger.debug('in_flight=%s, retries=%s', len(self.in_flight), self.retries.most_common(4))
-        self._on_tick(self)
+        self.on_tick(self)
 
         sent = 0
         for ip, ttl in self._iter_retry():
@@ -244,6 +255,7 @@ class Tracer(object):
                 pass
             self.retries.pop(key, None)
         self.result[ping_ip][ttl] = pong_ip
+        self.on_pong(self, ping_ip, pong_ip, ttl)
 
     def on_data(self, data, addr):
         # get IP packet inside returned IP

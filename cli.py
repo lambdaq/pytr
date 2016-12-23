@@ -15,18 +15,28 @@ def extract_ipv4(lines):
 
 
 def main(stdscr, inputs):
-    stdscr.refresh()  # to avoid getch() clear whole screen
+    # to avoid getch() clear whole screen call stdscr.refresh()
+
     ips = list(extract_ipv4(inputs.split('\n')))
+    stdscr.addstr(0, 0, 'DEST:%s' % '     '.join(ips))
+    stdscr.refresh()
 
     t = Tracer()
 
-    def on_tick(tracer):
-        stdscr.addstr(0, 0, datetime.datetime.now().strftime('%F %T'))
-        stdscr.refresh()
+    # def on_tick(tracer):
+    #     stdscr.addstr(0, 0, datetime.datetime.now().strftime('%F %T'))
+    #     stdscr.refresh()
+    # t.on_tick = on_tick
 
-    t.on_tick(on_tick)
+    def on_pong(tracer, ping_ip, pong_ip, ttl):
+        stdscr.addstr(1 + ttl, 0, ' %2d  %s' % (ttl, pong_ip))
+        stdscr.refresh()
+    t.on_pong = on_pong
+
     t.run(ips)
 
+
+    c = stdscr.getch()
     return
 
     pad = curses.newpad(100, 100)
