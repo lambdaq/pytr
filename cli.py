@@ -2,7 +2,7 @@
 # coding: utf8
 
 import sys, curses
-import re, time
+import re, time, datetime
 
 from core import Tracer
 
@@ -16,15 +16,20 @@ def extract_ipv4(lines):
 
 def main(stdscr, inputs):
     stdscr.refresh()  # to avoid getch() clear whole screen
-    ips = list(extract_ipv4(inputs.split('\n')))
+    # ips = list(extract_ipv4(inputs.split('\n')))
 
-    t = Tracer()
+    # t = Tracer()
 
-    def on_tick(tracer):
-        stdscr.addstr(0, 0, time.time())
+    # def on_tick(tracer):
+    #     stdscr.addstr(0, 0, time.time())
 
-    t.on_tick = on_tick
-    t.run(ips)
+    # t.on_tick = on_tick
+    # t.run(ips)
+
+    while 1:
+        stdscr.addstr(5, 5, datetime.datetime.now().strftime('%F %T'))
+        stdscr.refresh()
+        time.sleep(0.3)
 
     return
 
