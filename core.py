@@ -113,6 +113,8 @@ MAX_RETRY = 5
 class Tracer(object):
     MAX_TTL = 32
 
+    _on_tick = lambda *args: None
+
     def __init__(self):
         """
         packet send rate = self.batch_size/self.timeout
@@ -181,16 +183,12 @@ class Tracer(object):
         if ttl <= self.max_ttl[ip]:
             self.result[ip][ttl] = '?'
 
-    @property
-    def on_tick(self):
-        return getattr(self, '_on_tick', None) or (lambda *args: None)
-
-    @on_tick.setter
     def on_tick(self, func):
         self._on_tick = func
 
     def tick(self):
         logger.debug('in_flight=%s, retries=%s', len(self.in_flight), self.retries.most_common(4))
+        self._on_tick(self)
 
         sent = 0
         for ip, ttl in self._iter_retry():
@@ -208,7 +206,6 @@ class Tracer(object):
             self.ping(ip, ttl)
             self.retries[(ip, ttl)] = self.max_retry
             sent += 1
-        self.on_tick()
 
     def ping(self, ip, ttl):
         logger.debug("Ping %s, ttl=%s", ip, ttl)
