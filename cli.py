@@ -5,6 +5,13 @@ import sys, curses
 import re, time, datetime
 
 from core import Tracer
+from ipip import IPData
+
+
+import locale
+locale.setlocale(locale.LC_ALL, '')
+code = locale.getpreferredencoding()
+
 
 
 def extract_ipv4(lines):
@@ -21,6 +28,7 @@ def main(stdscr, inputs):
     stdscr.addstr(0, 0, 'DEST:%s' % '     '.join(ips))
     stdscr.refresh()
 
+    geoip = IPData('17monipdb.dat')
     t = Tracer()
 
     # def on_tick(tracer):
@@ -29,13 +37,14 @@ def main(stdscr, inputs):
     # t.on_tick = on_tick
 
     def on_pong(tracer, ping_ip, pong_ip, ttl):
-        stdscr.addstr(1 + ttl, 0, ' %2d  %s' % (ttl, pong_ip))
+        loc = ''.join(geoip.find(pong_ip).encode('utf8').split('\t')[1:]).replace(' ', '')
+        stdscr.addstr(1 + ttl, 0, ' %2d  %s\t%s' % (ttl, pong_ip, loc))
         stdscr.refresh()
     t.on_pong = on_pong
 
     t.run(ips)
 
-
+    # listen for key to quit
     c = stdscr.getch()
     return
 
